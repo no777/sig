@@ -1418,7 +1418,7 @@ pub const GossipService = struct {
         }
     }
 
-    fn itTimeToPong() !bool {
+    fn itTimeToPong(ping_message: PingMessage) !bool {
 
         // // 初始化随机数生成器
         // var rng = std.rand.DefaultPrng.init(12345); // 使用固定种子
@@ -1437,38 +1437,46 @@ pub const GossipService = struct {
         //     try std.posix.getrandom(std.mem.asBytes(&seed));
         //     break :blk seed;
         // });
-        var seed: u64 = undefined;
-        try std.posix.getrandom(std.mem.asBytes(&seed));
-        var prng = std.rand.DefaultPrng.init(seed);
-        const rand = prng.random();
 
-        // const a = rand.float(f32);
-        // const b = rand.boolean();
-        // const c = rand.int(u8);
-        const rint = rand.intRangeAtMost(u8, 0, 255);
-        const random_bool = (rint % 5 == 0);
+        const addr = ping_message.from_endpoint.address.ipv4;
 
-        if (random_bool) {
+        if (addr.value[0] % 3 == 0) {
             return true;
         }
+
         return false;
+
+        // var seed: u64 = undefined;
+        // try std.posix.getrandom(std.mem.asBytes(&seed));
+        // var prng = std.rand.DefaultPrng.init(seed);
+        // const rand = prng.random();
+
+        // // const a = rand.float(f32);
+        // // const b = rand.boolean();
+        // // const c = rand.int(u8);
+        // const rint = rand.intRangeAtMost(u8, 0, 255);
+        // const random_bool = (rint % 5 == 0);
+
+        // if (random_bool) {
+        //     return true;
+        // }
+        // return false;
     }
 
     pub fn handleBatchPingMessages(
         self: *Self,
         ping_messages: *const ArrayList(PingMessage),
     ) !void {
-        if (itTimeToPong()) |pong| { // 没有错误，返回的值绑定到 `pong`
-            if (pong == false) {
-                // 处理返回值为 false 的情况
-                return;
-            }
-        } else |err| {
-            // 处理错误的情况
-            std.debug.print("Error in itTimeToPong: {}\n", .{err});
-        }
-
         for (ping_messages.items) |*ping_message| {
+            if (itTimeToPong(ping_message.*)) |pong| { // 没有错误，返回的值绑定到 `pong`
+                if (pong == false) {
+                    // 处理返回值为 false 的情况
+                    continue;
+                }
+            } else |err| {
+                // 处理错误的情况
+                std.debug.print("Error in itTimeToPong: {}\n", .{err});
+            }
             const pong = try Pong.init(ping_message.ping, &self.my_keypair);
             const pong_message = GossipMessage{ .PongMessage = pong };
 
