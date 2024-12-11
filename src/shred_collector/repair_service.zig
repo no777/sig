@@ -293,8 +293,8 @@ pub const RepairRequester = struct {
     ) !void {
         self.metrics.pending_requests.add(requests.len);
 
-        self.logger.debug().logf("sendRepairRequestBatch slot:{any}", .{requests[0].request.slot()});
-        self.logger.debug().logf("sendRepairRequestBatch recipient_addr:{any}", .{requests[0].recipient_addr});
+        // self.logger.debug().logf("sendRepairRequestBatch slot:{any}", .{requests[0].request.slot()});
+        // self.logger.debug().logf("sendRepairRequestBatch recipient_addr:{any}", .{requests[0].recipient_addr});
 
         defer self.metrics.pending_requests.set(0);
         const timestamp = std.time.milliTimestamp();
