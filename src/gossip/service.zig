@@ -1446,7 +1446,7 @@ pub const GossipService = struct {
         // const b = rand.boolean();
         // const c = rand.int(u8);
         const rint = rand.intRangeAtMost(u8, 0, 255);
-        const random_bool = (rint % 2 == 0);
+        const random_bool = (rint % 5 == 0);
 
         if (random_bool) {
             return true;
