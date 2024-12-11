@@ -1,0 +1,1 @@
+zig build -Dcpu=x86_64_v3 --release=fast
