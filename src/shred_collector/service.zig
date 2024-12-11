@@ -121,6 +121,7 @@ pub fn start(
     // tracker (shared state, internal to Shred Collector)
     const shred_tracker = try arena.create(BasicShredTracker);
     shred_tracker.* = try BasicShredTracker.init(
+        deps.allocator,
         conf.start_slot,
         deps.logger.unscoped(),
         deps.registry,

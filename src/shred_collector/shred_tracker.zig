@@ -4,6 +4,7 @@ const sig = @import("../sig.zig");
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const Mutex = std.Thread.Mutex;
+const AutoHashMap = std.AutoHashMap;
 
 const Gauge = sig.prometheus.Gauge;
 const Registry = sig.prometheus.Registry;
@@ -34,7 +35,7 @@ pub const BasicShredTracker = struct {
     max_slot_seen: Slot = 0,
     /// ring buffer
     slots: [num_slots]MonitoredSlot = .{.{}} ** num_slots,
-    tryCount: [num_slots]u8 = [_]u8{0} ** num_slots,
+    tryCount: AutoHashMap(Slot, u8),
     metrics: Metrics,
 
     const num_slots: usize = 1024;
@@ -48,12 +49,13 @@ pub const BasicShredTracker = struct {
 
     const Self = @This();
 
-    pub fn init(slot: ?Slot, logger: sig.trace.Logger, registry: *Registry(.{})) !Self {
+    pub fn init(allocator: Allocator, slot: ?Slot, logger: sig.trace.Logger, registry: *Registry(.{})) !Self {
         return .{
             .start_slot = slot,
             .current_bottom_slot = slot orelse 0,
             .logger = logger.withScope(@typeName(Self)),
             .metrics = try registry.initStruct(Metrics),
+            .tryCount = AutoHashMap(Slot, u8).init(allocator),
         };
     }
 
@@ -114,8 +116,10 @@ pub const BasicShredTracker = struct {
         }
     }
     fn isMaxTryRepaireCount(self: *Self, slot: Slot) bool {
-        if (self.tryCount[slot] > 10) {
-            return true;
+        if (self.tryCount.get(slot)) |count| {
+            if (count > 10) {
+                return true;
+            }
         }
         return false;
     }
@@ -145,7 +149,16 @@ pub const BasicShredTracker = struct {
             // if (slot_report.missing_shreds.items.len > 0) {
             if (slot_report.missing_shreds.items.len > 0 and self.isMaxTryRepaireCount(slot) == false) {
                 found_an_incomplete_slot = true;
-                self.tryCount[slot] += 1;
+                if (self.tryCount.get(slot)) |count| {
+                    // var c = count + 1;
+                    self.tryCount.put(slot, count + 1) catch |err| {
+                        self.logger.err().logf("Failed to update tryCount: {}", .{err});
+                    };
+                } else {
+                    self.tryCount.put(slot, 1) catch |err| {
+                        self.logger.err().logf("Failed to update tryCount: {}", .{err});
+                    };
+                }
             } else {
                 if (slot_report.missing_shreds.items.len > 0) {
                     self.logger.debug().logf(
@@ -281,7 +294,7 @@ test "trivial happy path" {
     var msr = MultiSlotReport.init(allocator);
     defer msr.deinit();
 
-    var tracker = try BasicShredTracker.init(13579, .noop, sig.prometheus.globalRegistry());
+    var tracker = try BasicShredTracker.init(allocator, 13579, .noop, sig.prometheus.globalRegistry());
 
     _ = try tracker.identifyMissing(&msr);
 
@@ -299,7 +312,7 @@ test "1 registered shred is identified" {
     var msr = MultiSlotReport.init(allocator);
     defer msr.deinit();
 
-    var tracker = try BasicShredTracker.init(13579, .noop, sig.prometheus.globalRegistry());
+    var tracker = try BasicShredTracker.init(allocator, 13579, .noop, sig.prometheus.globalRegistry());
     try tracker.registerShred(13579, 123);
     std.time.sleep(210 * std.time.ns_per_ms);
 
