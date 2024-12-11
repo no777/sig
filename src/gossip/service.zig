@@ -1418,18 +1418,35 @@ pub const GossipService = struct {
         }
     }
 
-    fn itTimeToPong() bool {
+    fn itTimeToPong() !bool {
 
-        // 初始化随机数生成器
-        var rng = std.rand.DefaultPrng.init(12345); // 使用固定种子
-        // 或者使用随机种子：
-        // var rng = std.rand.DefaultPrng.init(std.time.nanoTimestamp());
+        // // 初始化随机数生成器
+        // var rng = std.rand.DefaultPrng.init(12345); // 使用固定种子
+        // // 或者使用随机种子：
+        // // var rng = std.rand.DefaultPrng.init(std.time.nanoTimestamp());
 
-        // 生成一个随机整数
-        // const random_int = rng.random() % 10; // 范围 [0, 9]
+        // // 生成一个随机整数
+        // // const random_int = rng.random() % 10; // 范围 [0, 9]
 
-        // 生成一个随机布尔值
-        const random_bool = rng.random().int(u32) % 2 == 0;
+        // // 生成一个随机布尔值
+        // const rint = rng.random().int(u32);
+        // const random_bool = (rint % 2 == 0);
+
+        // var prng = std.rand.DefaultPrng.init(blk: {
+        //     var seed: u64 = undefined;
+        //     try std.posix.getrandom(std.mem.asBytes(&seed));
+        //     break :blk seed;
+        // });
+        var seed: u64 = undefined;
+        try std.posix.getrandom(std.mem.asBytes(&seed));
+        var prng = std.rand.DefaultPrng.init(seed);
+        const rand = prng.random();
+
+        // const a = rand.float(f32);
+        // const b = rand.boolean();
+        // const c = rand.int(u8);
+        const rint = rand.intRangeAtMost(u8, 0, 255);
+        const random_bool = (rint % 2 == 0);
 
         if (random_bool) {
             return true;
@@ -1441,13 +1458,16 @@ pub const GossipService = struct {
         self: *Self,
         ping_messages: *const ArrayList(PingMessage),
     ) !void {
-        if (itTimeToPong() == false) {
-            self.logger.debug().logf(
-                "itTimeToPong false",
-                .{},
-            );
-            return;
+        if (itTimeToPong()) |pong| { // 没有错误，返回的值绑定到 `pong`
+            if (pong == false) {
+                // 处理返回值为 false 的情况
+                return;
+            }
+        } else |err| {
+            // 处理错误的情况
+            std.debug.print("Error in itTimeToPong: {}\n", .{err});
         }
+
         for (ping_messages.items) |*ping_message| {
             const pong = try Pong.init(ping_message.ping, &self.my_keypair);
             const pong_message = GossipMessage{ .PongMessage = pong };
