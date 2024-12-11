@@ -14,7 +14,7 @@ const MAX_SHREDS_PER_SLOT: usize = sig.ledger.shred.MAX_SHREDS_PER_SLOT;
 
 const MIN_SLOT_AGE_TO_REPORT_AS_MISSING: u64 = 200;
 
-const MAX_RETRY_COUNT = 10;
+const MAX_RETRY_COUNT = 100;
 
 pub const Range = struct {
     start: usize,
@@ -122,6 +122,7 @@ pub const BasicShredTracker = struct {
             if (count > MAX_RETRY_COUNT) {
                 return true;
             }
+            return false;
         }
         return false;
     }
