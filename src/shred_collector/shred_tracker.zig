@@ -150,29 +150,29 @@ pub const BasicShredTracker = struct {
             slot_report.slot = slot;
             try monitored_slot.identifyMissing(&slot_report.missing_shreds);
             // if (slot_report.missing_shreds.items.len > 0) {
-            if (slot_report.missing_shreds.items.len > 0 and self.isMaxTryRepaireCount(slot) == false) {
+            if (slot_report.missing_shreds.items.len > 0) { //and self.isMaxTryRepaireCount(slot) == false) {
                 found_an_incomplete_slot = true;
-                self.logger.debug().logf(
-                    "slot_report.missing_shreds.items.len {}",
-                    .{slot_report.missing_shreds.items.len},
-                );
-                if (self.tryCount.get(slot)) |count| {
-                    // var c = count + 1;
-                    self.tryCount.put(slot, count + 1) catch |err| {
-                        self.logger.err().logf("Failed to update tryCount: {}", .{err});
-                    };
-                } else {
-                    self.tryCount.put(slot, 1) catch |err| {
-                        self.logger.err().logf("Failed to update tryCount: {}", .{err});
-                    };
-                }
+                // self.logger.debug().logf(
+                //     "slot_report.missing_shreds.items.len {}",
+                //     .{slot_report.missing_shreds.items.len},
+                // );
+                // if (self.tryCount.get(slot)) |count| {
+                //     // var c = count + 1;
+                //     self.tryCount.put(slot, count + 1) catch |err| {
+                //         self.logger.err().logf("Failed to update tryCount: {}", .{err});
+                //     };
+                // } else {
+                //     self.tryCount.put(slot, 1) catch |err| {
+                //         self.logger.err().logf("Failed to update tryCount: {}", .{err});
+                //     };
+                // }
             } else {
-                if (slot_report.missing_shreds.items.len > 0) {
-                    self.logger.debug().logf(
-                        "slot_report.missing_shreds.items.len {}",
-                        .{slot_report.missing_shreds.items.len},
-                    );
-                }
+                // if (slot_report.missing_shreds.items.len > 0) {
+                //     self.logger.debug().logf(
+                //         "slot_report.missing_shreds.items.len {}",
+                //         .{slot_report.missing_shreds.items.len},
+                //     );
+                // }
                 slot_reports.drop(1);
             }
             if (!found_an_incomplete_slot) {
