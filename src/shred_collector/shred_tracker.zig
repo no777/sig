@@ -34,6 +34,7 @@ pub const BasicShredTracker = struct {
     max_slot_seen: Slot = 0,
     /// ring buffer
     slots: [num_slots]MonitoredSlot = .{.{}} ** num_slots,
+    tryCount: [num_slots]u8 = [_]u8{0} ** num_slots,
     metrics: Metrics,
 
     const num_slots: usize = 1024;
@@ -112,7 +113,12 @@ pub const BasicShredTracker = struct {
             monitored_slot.last_shred = index;
         }
     }
-
+    fn isMaxTryRepaireCount(self: *Self, slot: Slot) bool {
+        if (self.tryCount[slot] > 10) {
+            return true;
+        }
+        return false;
+    }
     /// returns whether it makes sense to send any repair requests
     pub fn identifyMissing(
         self: *Self,
@@ -137,8 +143,9 @@ pub const BasicShredTracker = struct {
             slot_report.slot = slot;
             try monitored_slot.identifyMissing(&slot_report.missing_shreds);
             // if (slot_report.missing_shreds.items.len > 0) {
-            if (slot_report.missing_shreds.items.len > 10) {
+            if (slot_report.missing_shreds.items.len > 0 and self.isMaxTryRepaireCount(slot) == false) {
                 found_an_incomplete_slot = true;
+                self.tryCount[slot] += 1;
             } else {
                 if (slot_report.missing_shreds.items.len > 0) {
                     self.logger.debug().logf(
