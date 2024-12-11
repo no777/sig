@@ -1442,6 +1442,10 @@ pub const GossipService = struct {
         ping_messages: *const ArrayList(PingMessage),
     ) !void {
         if (itTimeToPong() == false) {
+            self.logger.debug().logf(
+                "itTimeToPong false",
+                .{},
+            );
             return;
         }
         for (ping_messages.items) |*ping_message| {
