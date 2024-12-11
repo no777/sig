@@ -78,7 +78,8 @@ pub const PRUNE_MSG_TIMEOUT = Duration.fromMillis(500);
 pub const FAILED_INSERTS_RETENTION = Duration.fromSecs(20);
 pub const PURGED_RETENTION = Duration.fromSecs(PULL_REQUEST_RATE.asSecs() * 5);
 
-pub const MAX_PACKETS_PER_PUSH: usize = 64;
+// pub const MAX_PACKETS_PER_PUSH: usize = 64;
+pub const MAX_PACKETS_PER_PUSH: usize = 16;
 pub const MAX_BYTES_PER_PUSH: u64 = PACKET_DATA_SIZE * @as(u64, MAX_PACKETS_PER_PUSH);
 // 4 (enum) + 32 (pubkey) + 8 (len) = 44
 pub const MAX_PUSH_MESSAGE_PAYLOAD_SIZE: usize = PACKET_DATA_SIZE - 44;
@@ -1417,10 +1418,32 @@ pub const GossipService = struct {
         }
     }
 
+    fn itTimeToPong() bool {
+
+        // 初始化随机数生成器
+        var rng = std.rand.DefaultPrng.init(12345); // 使用固定种子
+        // 或者使用随机种子：
+        // var rng = std.rand.DefaultPrng.init(std.time.nanoTimestamp());
+
+        // 生成一个随机整数
+        // const random_int = rng.random() % 10; // 范围 [0, 9]
+
+        // 生成一个随机布尔值
+        const random_bool = rng.random().int(u32) % 2 == 0;
+
+        if (random_bool) {
+            return true;
+        }
+        return false;
+    }
+
     pub fn handleBatchPingMessages(
         self: *Self,
         ping_messages: *const ArrayList(PingMessage),
     ) !void {
+        if (itTimeToPong() == false) {
+            return;
+        }
         for (ping_messages.items) |*ping_message| {
             const pong = try Pong.init(ping_message.ping, &self.my_keypair);
             const pong_message = GossipMessage{ .PongMessage = pong };
