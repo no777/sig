@@ -133,7 +133,7 @@ pub fn run() !void {
     var max_shreds_option = cli.Option{
         .long_name = "max-shreds",
         .help = "Max number of shreds to store in the blockstore",
-        .value_ref = cli.mkRef(&config.current.leader_schedule_path),
+        .value_ref = cli.mkRef(&config.current.max_shreds),
         .required = false,
         .value_name = "max shreds",
     };
