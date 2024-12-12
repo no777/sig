@@ -192,6 +192,8 @@ fn findSlotsToClean(
     const num_slots = highest_slot - lowest_slot + 1;
     const mean_shreds_per_slot = num_shreds / num_slots;
 
+    logger.debug().logf("num_slots: {any} num_shreds: {any}", .{ num_slots, num_shreds });
+
     if (num_shreds <= max_ledger_shreds) {
         return .{ .should_clean = false, .highest_slot_to_purge = 0, .total_shreds = num_shreds };
     }
@@ -472,7 +474,7 @@ test "findSlotsToClean" {
         db = try TestDB.reuseBlockstore(@src());
         reader.db = db;
     }
-    const r2 = try findSlotsToClean(&reader, 0, 100);
+    const r2 = try findSlotsToClean(logger, &reader, 0, 100);
     try std.testing.expectEqual(true, r2.should_clean);
     try std.testing.expectEqual(1000, r2.total_shreds);
     try std.testing.expectEqual(0, r2.highest_slot_to_purge);
