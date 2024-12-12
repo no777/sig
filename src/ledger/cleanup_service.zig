@@ -98,7 +98,7 @@ pub fn cleanBlockstore(
 
     // NOTE: this will clean everything past the lowest slot in the blockstore
     const root: Slot = try blockstore_reader.lowestSlot();
-    const result = try findSlotsToClean(blockstore_reader, root, max_ledger_shreds);
+    const result = try findSlotsToClean(logger_, blockstore_reader, root, max_ledger_shreds);
     logger.info().logf("findSlotsToClean result: {any}", .{result});
 
     if (result.should_clean) {
@@ -152,10 +152,13 @@ const SlotsToCleanResult = struct {
 ///
 /// Analogous to the [`find_slots_to_clean`](https://github.com/anza-xyz/agave/blob/6476d5fac0c30d1f49d13eae118b89be78fb15d2/ledger/src/blockstore_cleanup_service.rs#L103)
 fn findSlotsToClean(
+    logger_: sig.trace.Logger,
     blockstore_reader: *BlockstoreReader,
     max_root: Slot,
     max_ledger_shreds: u64,
 ) !SlotsToCleanResult {
+    const logger = logger_.withScope(LOG_SCOPE);
+
     const num_shreds = try blockstore_reader.db.count(schema.data_shred);
 
     // Using the difference between the lowest and highest slot seen will
@@ -198,6 +201,9 @@ fn findSlotsToClean(
         // so that our integer division rounds up
         const num_slots_to_clean = (num_shreds - max_ledger_shreds + (mean_shreds_per_slot - 1)) / mean_shreds_per_slot;
         const highest_slot_to_purge = @min(lowest_slot + num_slots_to_clean - 1, max_root);
+
+        logger.debug().logf("max_ledger_shreds: {any} num_slots_to_clean: {any}", .{ max_ledger_shreds, num_slots_to_clean });
+
         return .{ .should_clean = true, .highest_slot_to_purge = highest_slot_to_purge, .total_shreds = num_shreds };
     } else {
         return .{ .should_clean = false, .highest_slot_to_purge = 0, .total_shreds = num_shreds };
@@ -445,7 +451,7 @@ test "findSlotsToClean" {
         try db.commit(&write_batch);
     }
 
-    const r = try findSlotsToClean(&reader, 0, 100);
+    const r = try findSlotsToClean(logger, &reader, 0, 100);
     try std.testing.expectEqual(false, r.should_clean);
     try std.testing.expectEqual(0, r.total_shreds);
     try std.testing.expectEqual(0, r.highest_slot_to_purge);
