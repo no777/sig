@@ -495,6 +495,7 @@ pub fn run() !void {
                             &turbine_recv_port_option,
                             &repair_port_option,
                             &test_repair_option,
+                            &use_disk_index_option,
                             // turbine
                             &turbine_num_retransmit_threads,
                             &turbine_overwrite_stake_for_testing,
