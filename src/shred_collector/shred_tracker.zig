@@ -224,6 +224,8 @@ pub const BasicShredTracker = struct {
                         "slot_report.missing_shreds.items.len {}",
                         .{slot_report.missing_shreds.items.len},
                     );
+                } else {
+                    self.writeToShm(slot);
                 }
                 slot_reports.drop(1);
             }
@@ -239,7 +241,6 @@ pub const BasicShredTracker = struct {
                         .{slot},
                     );
                 }
-                self.writeToShm(slot);
 
                 self.current_bottom_slot = @max(self.current_bottom_slot, slot + 1);
                 self.metrics.finished_slots_through.set(slot);

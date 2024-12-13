@@ -109,7 +109,8 @@ pub const RepairService = struct {
         self.report.deinit();
     }
 
-    const min_loop_duration_ns = 100 * std.time.ns_per_ms;
+    // const min_loop_duration_ns = 100 * std.time.ns_per_ms;
+    const min_loop_duration_ns = 50 * std.time.ns_per_ms;
 
     pub fn run(self: *Self) !void {
         var waiting_for_peers = false;
