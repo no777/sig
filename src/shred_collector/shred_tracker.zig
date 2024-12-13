@@ -61,6 +61,54 @@ pub const BasicShredTracker = struct {
         };
     }
 
+    pub fn deinit(self: *Self) void {
+        self.tryCount.deinit();
+    }
+    //for macos
+    //diskutil erasevolume HFS+ 'RAMDisk' `hdiutil attach -nomount ram://2097152`
+    //sudo umount /tmp
+    //sudo mount -t hfs+ /Volumes/RAMDisk /tmp
+
+    pub fn writeToShm(value: u64) void {
+        // const dirPath = switch (@import("builtin").target.os.tag) {
+        //     .linux => "/dev/shm/sig",
+        //     else => "/tmp/sig",
+        // };
+
+        // const filePath = switch (@import("builtin").target.os.tag) {
+        //     .linux => "/dev/shm/sig/highslot",
+        //     else => "/tmp/sig/highslot",
+        // };
+        const dirPath = "/tmp/sig";
+        const filePath = dirPath ++ "/highslot";
+
+        // 创建目录（如果不存在）
+        _ = std.fs.cwd().makeDir(dirPath) catch {
+            // 忽略创建目录的错误
+            return;
+        };
+
+        // 打开或创建文件
+        const file = std.fs.cwd().createFile(filePath, .{
+            .truncate = false,
+            .read = false,
+        }) catch {
+            return; // 忽略所有错误
+        };
+        defer file.close();
+
+        // 将整数转换为字符串
+        var buffer: [32]u8 = undefined;
+        const slice = std.fmt.bufPrint(&buffer, "{d}\n", .{value}) catch {
+            return; // 忽略所有错误
+        };
+
+        // 写入文件
+        file.writeAll(slice) catch {
+            return; // 忽略所有错误
+        };
+    }
+
     pub fn maybeSetStart(self: *Self, start_slot: Slot) void {
         if (self.start_slot == null) {
             self.start_slot = start_slot;
@@ -187,6 +235,7 @@ pub const BasicShredTracker = struct {
                         .{slot},
                     );
                 }
+                writeToShm(slot);
                 self.current_bottom_slot = @max(self.current_bottom_slot, slot + 1);
                 self.metrics.finished_slots_through.set(slot);
                 monitored_slot.* = .{};
