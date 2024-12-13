@@ -69,7 +69,7 @@ pub const BasicShredTracker = struct {
     //sudo umount /tmp
     //sudo mount -t hfs+ /Volumes/RAMDisk /tmp
 
-    pub fn writeToShm(value: u64) void {
+    pub fn writeToShm(self: *Self, value: u64) void {
         // const dirPath = switch (@import("builtin").target.os.tag) {
         //     .linux => "/dev/shm/sig",
         //     else => "/tmp/sig",
@@ -94,8 +94,9 @@ pub const BasicShredTracker = struct {
             // .truncate = true, // 清空文件内容
             // .exclusive = false, // 允许覆盖已存在文件
             // .read = false, // 禁止读取
-        }) catch {
-            return; // 忽略所有错误
+        }) catch |err| {
+            self.logger.err().logf("Failed to open file: {s}", .{@errorName(err)});
+            return;
         };
         defer file.close();
 
@@ -106,7 +107,8 @@ pub const BasicShredTracker = struct {
         };
 
         // 写入文件
-        file.writeAll(slice) catch {
+        file.writeAll(slice) catch |err| {
+            self.logger.err().logf("Failed to writeAll file: {s}", .{@errorName(err)});
             return; // 忽略所有错误
         };
     }
@@ -237,7 +239,8 @@ pub const BasicShredTracker = struct {
                         .{slot},
                     );
                 }
-                writeToShm(slot);
+                self.writeToShm(slot);
+
                 self.current_bottom_slot = @max(self.current_bottom_slot, slot + 1);
                 self.metrics.finished_slots_through.set(slot);
                 monitored_slot.* = .{};
