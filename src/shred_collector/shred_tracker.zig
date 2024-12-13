@@ -85,7 +85,7 @@ pub const BasicShredTracker = struct {
         // 创建目录（如果不存在）
         _ = std.fs.cwd().makeDir(dirPath) catch {
             // 忽略创建目录的错误
-            return;
+            // return;
         };
 
         // 打开或创建文件
