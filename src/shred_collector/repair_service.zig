@@ -300,6 +300,11 @@ pub const RepairRequester = struct {
         defer self.metrics.pending_requests.set(0);
         const timestamp = std.time.milliTimestamp();
         for (requests) |request| {
+            self.logger.debug().logf("Repair request - slot: {d}, addr: {any}, port: {d}", .{
+                request.request.slot(),
+                request.recipient_addr.ip(),
+                request.recipient_addr.port(),
+            });
             var packet: Packet = .{
                 .addr = request.recipient_addr.toEndpoint(),
                 .data = undefined,

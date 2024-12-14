@@ -89,9 +89,9 @@ pub const BasicShredTracker = struct {
         };
 
         // 打开或创建文件
-        const file = std.fs.cwd().openFile(filePath, .{
-            .mode = .read_write,
-            // .truncate = true, // 清空文件内容
+        const file = std.fs.cwd().createFile(filePath, .{
+            // .mode = .read_write,
+            .truncate = true, // 清空文件内容
             // .exclusive = false, // 允许覆盖已存在文件
             // .read = false, // 禁止读取
         }) catch |err| {
