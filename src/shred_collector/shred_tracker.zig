@@ -84,7 +84,7 @@ pub const BasicShredTracker = struct {
         if (entries.items.len > 0) {
             self.logger.debug().logf("entries {} ", .{entries.items.len});
 
-            const transaction_message = entries.items[0].transactions.items[0].message;
+            // const transaction_message = entries.items[0].transactions.items[0].message;
             // switch (transaction_message) {
             //     .V1 => {
             //         // 假设在 `V1` 版本中存在 `accounts` 字段
@@ -99,7 +99,7 @@ pub const BasicShredTracker = struct {
             //     },
             // }
 
-            self.logger.debug().logf("transactions:{any}", .{transaction_message.legacy.instructions});
+            // self.logger.debug().logf("transactions:{any}", .{transaction_message.legacy.instructions});
         }
     }
 
