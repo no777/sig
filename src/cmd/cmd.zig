@@ -856,6 +856,7 @@ fn validator() !void {
             .leader_schedule = leader_provider,
             .shred_inserter = shred_inserter,
             .retransmit_shred_sender = &retransmit_shred_channel,
+            .blockstore_reader = blockstore_reader,
         },
     );
     defer shred_collector_manager.deinit();
@@ -987,6 +988,7 @@ fn shredCollector() !void {
             .leader_schedule = leader_provider,
             .shred_inserter = shred_inserter,
             .retransmit_shred_sender = &retransmit_shred_channel,
+            .blockstore_reader = blockstore_reader,
         },
     );
     defer shred_collector_manager.deinit();

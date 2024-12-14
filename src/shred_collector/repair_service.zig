@@ -178,6 +178,7 @@ pub const RepairService = struct {
         if (!try self.shred_tracker.identifyMissing(&self.report)) {
             return repairs;
         }
+
         var individual_count: usize = 0;
         var highest_count: usize = 0;
         var slot: Slot = 0;

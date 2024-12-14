@@ -52,6 +52,7 @@ pub const ShredCollectorDependencies = struct {
     leader_schedule: SlotLeaderProvider,
     shred_inserter: sig.ledger.ShredInserter,
     retransmit_shred_sender: ?*Channel(Packet),
+    blockstore_reader: *sig.ledger.BlockstoreReader,
 };
 
 /// Start the Shred Collector.
@@ -126,6 +127,7 @@ pub fn start(
         deps.logger.unscoped(),
         deps.registry,
     );
+    shred_tracker.setBlockstoreReader(deps.blockstore_reader);
 
     // processor (thread)
     try service_manager.spawn(
@@ -173,6 +175,7 @@ pub fn start(
         repair_peer_provider,
         shred_tracker,
     );
+
     try service_manager.spawn(
         "Repair Service",
         RepairService.run,

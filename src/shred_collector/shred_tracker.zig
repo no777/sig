@@ -20,6 +20,7 @@ pub const Range = struct {
     start: usize,
     end: ?usize,
 };
+const BlockstoreReader = sig.ledger.BlockstoreReader;
 
 /// This is a temporary placeholder that will be replaced by the Blockstore
 /// once it is implemented. This struct tracks shreds linearly with no regard
@@ -39,8 +40,13 @@ pub const BasicShredTracker = struct {
     slots: [num_slots]MonitoredSlot = .{.{}} ** num_slots,
     tryCount: AutoHashMap(Slot, u8),
     metrics: Metrics,
+    blockstore_reader: *BlockstoreReader,
 
     const num_slots: usize = 1024;
+
+    pub fn setBlockstoreReader(self: *Self, blockstore_reader: *BlockstoreReader) void {
+        self.blockstore_reader = blockstore_reader;
+    }
 
     const Metrics = struct {
         finished_slots_through: *Gauge(u64),
@@ -58,6 +64,7 @@ pub const BasicShredTracker = struct {
             .logger = logger.withScope(@typeName(Self)),
             .metrics = try registry.initStruct(Metrics),
             .tryCount = AutoHashMap(Slot, u8).init(allocator),
+            .blockstore_reader = undefined,
         };
     }
 
@@ -68,8 +75,35 @@ pub const BasicShredTracker = struct {
     //diskutil erasevolume HFS+ 'RAMDisk' `hdiutil attach -nomount ram://2097152`
     //sudo umount /tmp
     //sudo mount -t hfs+ /Volumes/RAMDisk /tmp
+    //read slot data from blockstore and print transactions
+    pub fn printSlot(self: *Self, blockstore_reader: *BlockstoreReader, slot: Slot) void {
+        const entries = blockstore_reader.getSlotEntries(slot, 0) catch |err| {
+            self.logger.err().logf("Failed to get slot entries: {s}", .{@errorName(err)});
+            return; // 忽略所有错误
+        };
+        if (entries.items.len > 0) {
+            self.logger.debug().logf("entries {} ", .{entries.items.len});
 
-    pub fn writeToShm(self: *Self, value: u64) void {
+            const transaction_message = entries.items[0].transactions.items[0].message;
+            // switch (transaction_message) {
+            //     .V1 => {
+            //         // 假设在 `V1` 版本中存在 `accounts` 字段
+            //         logger.info().logf("transactions: {}", .{transaction_message.accounts});
+            //     },
+            //     .V0 => {
+            //         // 如果 `V0` 版本没有 `accounts` 字段，可以处理其他逻辑
+            //         logger.info().log("transactions: V0 does not have accounts field");
+            //     },
+            //     else => {
+            //         logger.warn().logf("Unknown version: {}", .{transaction_message});
+            //     },
+            // }
+
+            self.logger.debug().logf("transactions:{any}", .{transaction_message.legacy.instructions});
+        }
+    }
+
+    pub fn writeToShm(self: *Self, slot: Slot) void {
         // const dirPath = switch (@import("builtin").target.os.tag) {
         //     .linux => "/dev/shm/sig",
         //     else => "/tmp/sig",
@@ -102,7 +136,7 @@ pub const BasicShredTracker = struct {
 
         // 将整数转换为字符串
         var buffer: [32]u8 = undefined;
-        const slice = std.fmt.bufPrint(&buffer, "{d}\n", .{value}) catch {
+        const slice = std.fmt.bufPrint(&buffer, "{d}\n", .{slot}) catch {
             return; // 忽略所有错误
         };
 
@@ -111,6 +145,8 @@ pub const BasicShredTracker = struct {
             self.logger.err().logf("Failed to writeAll file: {s}", .{@errorName(err)});
             return; // 忽略所有错误
         };
+
+        self.printSlot(self.blockstore_reader, slot);
     }
 
     pub fn maybeSetStart(self: *Self, start_slot: Slot) void {
