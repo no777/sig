@@ -237,6 +237,7 @@ pub const BasicShredTracker = struct {
             var slot_report = try slot_reports.addOne();
             slot_report.slot = slot;
             try monitored_slot.identifyMissing(&slot_report.missing_shreds);
+            self.logger.trace().logf("shred tracker: slot: {} , missing_shreds.len: {} ", .{ slot, slot_report.missing_shreds.items.len });
             // if (slot_report.missing_shreds.items.len > 0) {
             if (slot_report.missing_shreds.items.len > 0 and self.isMaxTryRepaireCount(slot) == false) {
                 found_an_incomplete_slot = true;
