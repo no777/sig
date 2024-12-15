@@ -82,7 +82,7 @@ pub const BasicShredTracker = struct {
             return; // 忽略所有错误
         };
         if (entries.items.len > 0) {
-            self.logger.debug().logf("entries {} ", .{entries.items.len});
+            self.logger.trace().logf("entries {} ", .{entries.items.len});
 
             // const transaction_message = entries.items[0].transactions.items[0].message;
             // switch (transaction_message) {
