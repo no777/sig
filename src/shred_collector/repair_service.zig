@@ -168,7 +168,7 @@ pub const RepairService = struct {
     }
 
     const MAX_SHRED_REPAIRS = 1000;
-    const MIN_HIGHEST_REPAIRS = 10;
+    const MIN_HIGHEST_REPAIRS = 50;
     const MAX_HIGHEST_REPAIRS = 200;
 
     fn getRepairs(self: *Self) !ArrayList(RepairRequest) {
