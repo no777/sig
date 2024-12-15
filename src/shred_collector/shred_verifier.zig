@@ -67,11 +67,6 @@ fn verifyShred(
     }
     metrics.cache_miss_count.inc();
 
-    //skip verify for test
-    if (metrics.cache_miss_count.get() > 0) {
-        return;
-    }
-
     const leader = leader_schedule.call(slot) orelse return error.leader_unknown;
 
     const valid = signature.verify(leader, &signed_data.data) catch
